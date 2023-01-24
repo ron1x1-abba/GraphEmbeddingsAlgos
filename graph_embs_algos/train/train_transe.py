@@ -6,7 +6,6 @@ import math
 import numpy as np
 import pytorch_lightning as pl
 from functools import partial
-from graph_tool import load_graph
 
 from ..models import TransE
 from ..dataloader import TripletDataset, generate_corruption_eval, generate_corruption_fit, DataMapper

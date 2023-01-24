@@ -24,5 +24,5 @@ PCT_START="--pct_start=0.05"
 LOGDIR="--logdir=${LOG_DIR}/TransE/"
 GPUS="--gpus=1"
 
-python pl_ru_roberta_long_sent.py ${TRAIN_BS} ${VAL_BS} ${SAVE_PATH} ${EPOCHS} ${LOGDIR} ${GPUS} ${LR} \
+python train_transe.py ${TRAIN_BS} ${VAL_BS} ${SAVE_PATH} ${EPOCHS} ${LOGDIR} ${GPUS} ${LR} \
     ${PCT_START} ${ETA} ${ETA_VAL} ${TRAIN_CORRUPT} ${VAL_CORRUPT} ${TRAIN_DATASET} ${COMPARISSON_TYPE} ${VAL_RATIO}
