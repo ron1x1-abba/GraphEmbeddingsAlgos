@@ -15,6 +15,7 @@ from ..evaluation import hits_at_n_score, mrr_score, train_test_split
 
 SCORE_COMPARISSON_PRECISION = 1e5
 
+
 def compare(score_corr: torch.Tensor, score_pos: torch.Tensor, comparisson_type: str = 'best'):
     """
     Compares the scores of corruptions and positives using the specified strategy.
@@ -131,7 +132,6 @@ class LitModel(pl.LightningModule):
         self.log("hits@1", hits_1.item())
         self.log("MRR", mrr.item())
 
-
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.model.parameters(), betas=(0.9, 0.98), lr=self.hparams.lr)
         lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
@@ -143,8 +143,8 @@ class LitModel(pl.LightningModule):
             pct_start=self.hparams.pct_start
         )
         return {
-            'optimizer' : optimizer,
-            'lr_scheduler' : lr_scheduler
+            'optimizer': optimizer,
+            'lr_scheduler': lr_scheduler
         }
 
     def setup(self, stage=None):
@@ -186,6 +186,24 @@ class LitModel(pl.LightningModule):
 def configure_options():
     parser = argparse.ArgumentParser(description="Process arguements for training NN's.")
 
+    parser.add_argument("--train_dataset", type=str, default="./train/data.pck", help="Path to train dataset.")
+    parser.add_argument("--val_dataset", type=str, default="./val/data.pck", help="Path to val dataset.")
+    parser.add_argument("--train_bs", type=int, default=32, help="Batch size for training.")
+    parser.add_argument("--val_bs", type=int, default=32, help="Batch size for validation.")
+    parser.add_argument("--epochs", type=int, default=10, help="Amount of epochs for training.")
+    parser.add_argument("--tokenizer", type=str, default="./model/tokenizer/",
+                        help="Name or path to pretrained PyTorch tokenizer.")
+    parser.add_argument("--lr", type=float, default=1e-5, help="Learning rate.")
+    parser.add_argument("--wd", type=float, default=0.0, help="Weight decay.")
+    parser.add_argument("--accumulate_grad_batches", type=int, default=1,
+                        help="Amount of batches to accumulate grad from.")
+    parser.add_argument("--strategy", type=str, default="ddp", help="Distributed training strategy.")
+    parser.add_argument("--gpus", type=int, default=1, help="Amount of GPU's used for training.")
+    parser.add_argument("--grad_clipping", type=float, default=0.0, help="Value of gradient clipping.")
+    parser.add_argument("--anneal_strategy", type=str, default='linear', help="Strategy for LR scheduler.")
+    parser.add_argument("--pct_start", type=float, default=0.1, help="Percentage of increasing LR in cycle")
+    parser.add_argument("--logdir", type=str, default='./lightning_logs', help="Path to save training logs")
+    parser.add_argument("--save_path", type=str, default="./models/", help="Path where to save checkpoints")
     parser.add_argument("--eta", type=int, default=1, help="Number of negative per 1 triplet in train.")
     parser.add_argument("--eta_val", type=int, default=3, help="Number of negative per 1 triplet in evaluation.")
     parser.add_argument("--val_ratio", type=float, default=3, help="Ratio of val split of train.")
@@ -193,6 +211,7 @@ def configure_options():
                                                                          "training,  can be one of ['s+o', 'o', 's']")
     parser.add_argument("--val_corrupt", type=str, default='s+o', help="Which part of triplet to corrupt during "
                                                                        "validation,  can be one of ['s+o', 'o', 's']")
+    parser.add_argument("--comparisson_type", type=str, default='best', help="How to compare model results.")
 
     args = parser.parse_args()
     return args
