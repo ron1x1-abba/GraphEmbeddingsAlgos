@@ -15,4 +15,4 @@ class PairwiseLoss(torch.nn.Module):
                 pos_scores: torch.Tensor,
                 neg_scores: torch.Tensor
                 ):
-        return torch.maximum(self.margin - pos_scores + neg_scores, torch.Tensor([0])).sum()
+        return torch.maximum(self.margin - pos_scores + neg_scores, torch.Tensor([0]).to(pos_scores.device)).sum()

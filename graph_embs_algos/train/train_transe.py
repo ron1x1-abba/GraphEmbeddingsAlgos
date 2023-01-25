@@ -184,7 +184,7 @@ class LitModel(pl.LightningModule):
         return loader
 
     def val_dataloader(self):
-        loader = torch.utils.data.DataLoader(self.val_dataset, batch_size=self.val_bs, shuffle=True,
+        loader = torch.utils.data.DataLoader(self.val_dataset, batch_size=self.val_bs, shuffle=False,
                                              num_workers=8, pin_memory=True, collate_fn=self.val_collate)
 
         print("Val loader is OK!")
