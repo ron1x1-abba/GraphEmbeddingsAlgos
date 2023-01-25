@@ -107,15 +107,15 @@ class LitModel(pl.LightningModule):
                 score_pos = self.model(pos_trip[:, 0], pos_trip[:, 1], pos_trip[:, 2])
                 score_corr = self.model(neg_trip[:, 0], neg_trip[:, 1], neg_trip[:, 2])
 
-            if self.hparams.val_corrupt == 's+o':
+            if self.hparams.val_corrupt == 's,o':
                 obj_corr_score = score_corr[:score_corr.shape[0] // 2]
                 subj_corr_score = score_corr[score_corr.shape[0] // 2:]
                 rank = torch.cat([
-                    compare(subj_corr_score, score_pos, 'best') + 1,
-                    compare(obj_corr_score, score_pos, 'best') + 1
-                ], dim=0)
+                    compare(subj_corr_score, score_pos, self.hparams.comparisson_type).view(-1,1) + 1,
+                    compare(obj_corr_score, score_pos, self.hparams.comparisson_type).view(-1,1) + 1
+                ], dim=1)
             else:
-                rank = compare(score_corr, score_pos, 'best') + 1
+                rank = compare(score_corr, score_pos, self.hparams.comparisson_type) + 1
             ranks.append(rank)
 
         return {'rank' : torch.cat(ranks, dim=0)}
@@ -158,7 +158,7 @@ class LitModel(pl.LightningModule):
             triplets = pickle.load(f)
 
         self.mapper = DataMapper(triplets)
-        self.model = TransE(n_relations=len(self.mapper.rel2idx), n_entities=len(self.mapper.ent2idx), emb_dim=100,
+        self.model = TransE(n_relations=len(self.mapper.rel2idx), n_entities=len(self.mapper.ent2idx), emb_dim=150,
                             nonlinear=None, norm_type=2)
         self.train_dataset = self.mapper.transform(triplets, return_tensors='pt')
         self.train_dataset, self.val_dataset = train_test_split(self.train_dataset, test_size=self.hparams.val_ratio)
@@ -215,10 +215,12 @@ def configure_options():
     parser.add_argument("--eta", type=int, default=1, help="Number of negative per 1 triplet in train.")
     parser.add_argument("--eta_val", type=int, default=3, help="Number of negative per 1 triplet in evaluation.")
     parser.add_argument("--val_ratio", type=float, default=3, help="Ratio of val split of train.")
-    parser.add_argument("--train_corrupt", type=str, default='s+o', help="Which part of triplet to corrupt during "
-                                                                         "training,  can be one of ['s+o', 'o', 's']")
-    parser.add_argument("--val_corrupt", type=str, default='s+o', help="Which part of triplet to corrupt during "
-                                                                       "validation,  can be one of ['s+o', 'o', 's']")
+    parser.add_argument("--train_corrupt", type=str, default='s,o', help="Which part of triplet to corrupt during "
+                                                                         "training,  can be one of "
+                                                                         "['s+o', 'o', 's', 's,o']")
+    parser.add_argument("--val_corrupt", type=str, default='s,o', help="Which part of triplet to corrupt during "
+                                                                        "validation,  can be one of"
+                                                                        " ['s+o', 'o', 's', 's,o']")
     parser.add_argument("--comparisson_type", type=str, default='best', help="How to compare model results.")
     parser.add_argument("--lr_scheduler", action="store_true", default=False, help="Whether to use LRScheduler or not.")
 

@@ -59,7 +59,7 @@ def generate_corruption_fit(
         triplets: torch.Tensor,
         entities_list: List[str] = None,
         eta: int = 1,
-        corrupt: str = 's+o',
+        corrupt: str = 's,o',
         ent_size: int = 0
     ) -> torch.Tensor:
     """
@@ -75,8 +75,11 @@ def generate_corruption_fit(
 
     If :param entities_list is None and ent_size=0, then batch entities will be used to generate corruptions.
     """
-    if corrupt not in ['s', 'o', 's+o']:
+    if corrupt not in ['s', 'o', 's+o', 's,o']:
         raise ValueError(f"Invalid argument value {corrupt} passed for corruption type!")
+
+    if corrupt == 's,o':
+        corrupt = 's+o'
 
     if entities_list is not None:
         if isinstance(entities_list, np.ndarray):
@@ -121,7 +124,7 @@ def generate_corruption_fit(
 def generate_corruption_eval(
         triplets: torch.Tensor,
         entities_for_corrupt: torch.Tensor,
-        corrupt: str = 's+o'
+        corrupt: str = 's,o'
     ) -> torch.Tensor:
     """
     Generate corruptions for evaluation.
@@ -132,6 +135,9 @@ def generate_corruption_eval(
     """
     if corrupt not in ['s', 'o', 's+o']:
         raise ValueError(f"Invalid argument value {corrupt} passed for corruption type!")
+
+    if corrupt == 's,o':
+        corrupt = 's+o'
 
     if corrupt in ['s+o', 'o']:  # object is corrupted, leave subjects as it is
         rep_subj = triplets[:, 0].view(-1, 1).repeat((1, entities_for_corrupt.shape[0])) # shape (n, len(ent_for_corr))
