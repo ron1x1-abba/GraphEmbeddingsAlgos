@@ -17,15 +17,20 @@ def train_test_split(X, test_size: Union[int, float] = 0.2, allow_duplicate: boo
         test_size = int(len(X) * test_size)
 
     X_train = None
-    X_test_cands = X
+    X_test_cands = X.numpy()
 
-    ents, ents_cnt = torch.unique(torch.cat([X_test_cands[:, 0], X_test_cands[:, 2]], dim=0), return_counts=True)
-    rels, rels_cnt = torch.unique(X_test_cands[:, 1], return_counts=True)
+    # ents, ents_cnt = torch.unique(torch.cat([X_test_cands[:, 0], X_test_cands[:, 2]], dim=0), return_counts=True)
+    ents, ents_cnt = np.unique(np.concatenate([
+        X_test_cands[:, 0], X_test_cands[:, 2]
+    ], axis=0), return_counts=True)
+    # rels, rels_cnt = torch.unique(X_test_cands[:, 1], return_counts=True)
+    rels, rels_cnt = np.unique(X_test_cands[:, 1], return_Counts=True)
     dict_ents = dict(zip(ents, ents_cnt))
     dict_rels = dict(zip(rels, rels_cnt))
     idx_train, idx_test = [] , []
 
-    all_idx_perm = torch.randperm(X_test_cands.shape[0])
+    # all_idx_perm = torch.randperm(X_test_cands.shape[0])
+    all_idx_perm = np.random.permutation(X_test_cands.shape[0])
     for i, idx in enumerate(all_idx_perm):
         test_triple = X_test_cands[idx]
         dict_ents[test_triple[0]] -= 1
@@ -52,8 +57,8 @@ def train_test_split(X, test_size: Union[int, float] = 0.2, allow_duplicate: boo
                             "Set allow duplicate=True or reduce test size.")
 
     if X_train is None:
-        X_train = X_test_cands[idx_train]
-    X_test = X_test_cands[idx_test]
+        X_train = torch.from_numpy(X_test_cands[idx_train])
+    X_test = torch.from_numpy(X_test_cands[idx_test])
 
     return X_train[torch.randperm(X_train.shape[0])], X_test[torch.randperm(X_test.shape[0])]
 
