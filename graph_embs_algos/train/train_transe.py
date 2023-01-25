@@ -7,10 +7,10 @@ import numpy as np
 import pytorch_lightning as pl
 from functools import partial
 
-from ..models import TransE
-from ..dataloader import TripletDataset, generate_corruption_eval, generate_corruption_fit, DataMapper
-from ..loss import PairwiseLoss
-from ..evaluation import hits_at_n_score, mrr_score, train_test_split
+from graph_embs_algos.models import TransE
+from graph_embs_algos.dataloader import TripletDataset, generate_corruption_eval, generate_corruption_fit, DataMapper
+from graph_embs_algos.loss import PairwiseLoss
+from graph_embs_algos.evaluation import hits_at_n_score, mrr_score, train_test_split
 
 SCORE_COMPARISSON_PRECISION = 1e5
 
