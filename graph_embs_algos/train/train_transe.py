@@ -140,18 +140,18 @@ class LitModel(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.model.parameters(), betas=(0.9, 0.98), lr=self.hparams.lr)
-        lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
-            optimizer,
-            epochs=self.hparams.epochs,
-            total_steps=self.total_steps,
-            max_lr=self.hparams.lr,
-            anneal_strategy=self.hparams.anneal_strategy,
-            pct_start=self.hparams.pct_start
-        )
-        return {
-            'optimizer': optimizer,
-            'lr_scheduler': lr_scheduler
-        }
+        optim_dict = {'optimizer': optimizer}
+        if self.hparams.lr_scheduler:
+            lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
+                optimizer,
+                epochs=self.hparams.epochs,
+                total_steps=self.total_steps,
+                max_lr=self.hparams.lr,
+                anneal_strategy=self.hparams.anneal_strategy,
+                pct_start=self.hparams.pct_start
+            )
+            optim_dict['lr_scheduler'] = lr_scheduler
+        return optim_dict
 
     def setup(self, stage=None):
         with open(self.hparams.train_dataset, 'rb') as f:
@@ -220,6 +220,7 @@ def configure_options():
     parser.add_argument("--val_corrupt", type=str, default='s+o', help="Which part of triplet to corrupt during "
                                                                        "validation,  can be one of ['s+o', 'o', 's']")
     parser.add_argument("--comparisson_type", type=str, default='best', help="How to compare model results.")
+    parser.add_argument("--lr_scheduler", action="store_true", default=False, help="Whether to use LRScheduler or not.")
 
     args = parser.parse_args()
     return args
@@ -239,7 +240,7 @@ if __name__ == "__main__":
             filename='{epoch}-{hits@10:.3f}',
             every_n_epochs=1,
             save_top_k=1,
-            mode='min',
+            mode='max',
             monitor='hits@10'
         )
     ]
