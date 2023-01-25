@@ -50,7 +50,7 @@ class TripletDataset(Dataset):
         else:
             raise TypeError("Subjects must be on of [list, np.ndarray, torch.Tensor]")
 
-        self.data = torch.cat([subjects, predicates, objects], dim=1)
+        self.data = torch.cat([subjects.view(-1, 1), predicates.view(-1, 1), objects.view(-1, 1)], dim=1)
 
     def __getitem__(self, idx):
         return self.data[idx]
