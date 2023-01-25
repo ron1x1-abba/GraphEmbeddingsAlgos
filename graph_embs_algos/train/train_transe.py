@@ -236,11 +236,11 @@ if __name__ == "__main__":
     callbacks = [
         pl.callbacks.ModelCheckpoint(
             dirpath=params.save_path + f'mode-v_{logger.version}',
-            filename='{epoch}-{val_loss:.3f}',
+            filename='{epoch}-{hits@10:.3f}',
             every_n_epochs=1,
             save_top_k=1,
             mode='min',
-            monitor='val_loss'
+            monitor='hits@10'
         )
     ]
 
