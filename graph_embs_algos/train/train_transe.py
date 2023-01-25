@@ -50,6 +50,7 @@ def val_collator_upd(triplets, collate_fn=None, eta_val=3, **kwargs):
     :return: List of (positive, corruptions)
     """
 
+    triplets = torch.cat([x.view(1, -1) for x in triplets], dim=0)
     entities = torch.unique(torch.cat([triplets[:, 0], triplets[:, 2]], dim=0))
     collations = []
     for triplet in triplets:
@@ -163,7 +164,7 @@ class LitModel(pl.LightningModule):
         self.val_dataset = TripletDataset(self.val_dataset[:, 0], self.val_dataset[:, 1], self.val_dataset[:, 2])
 
         self.total_steps = math.ceil(len(self.train_dataset) * self.hparams.epochs /
-                                     (self.train_bs * self.hparams.accumulate_grad_batches * self.gpus))
+                                     (self.train_bs * self.hparams.accumulate_grad_batches * self.hparams.gpus))
 
         self.train_collate = partial(generate_corruption_fit, eta=self.hparams.eta, entities_list=None, ent_size=0,
                                      corrupt=self.hparams.train_corrupt)
@@ -225,13 +226,13 @@ if __name__ == "__main__":
     model = LitModel(params)
     model.setup()
 
-    logger = pl.loggers.TensorboardLogger(params.logdir)
+    logger = pl.loggers.TensorBoardLogger(params.logdir)
 
     callbacks = [
         pl.callbacks.ModelCheckpoint(
             dirpath=params.save_path + f'mode-v_{logger.version}',
             filename='{epoch}-{val_loss:.3f}',
-            every_n_epoch=1,
+            every_n_epochs=1,
             save_top_k=1,
             mode='min',
             monitor='val_loss'
@@ -240,7 +241,7 @@ if __name__ == "__main__":
 
     trainer = pl.Trainer(
         accumulate_grad_batches=params.accumulate_grad_batches,
-        startegy=params.startegy,
+        strategy=params.strategy,
         log_every_n_steps=100,
         val_check_interval=1.0,
         accelerator='gpu',
@@ -250,7 +251,7 @@ if __name__ == "__main__":
         gradient_clip_algorithm='norm',
         precision="bf16",
         logger=logger,
-        callbakcs=callbacks
+        callbacks=callbacks
     )
 
     trainer.validate(model)
