@@ -1,5 +1,6 @@
+
 import torch
-from GraphModel import GraphModel
+from .GraphModel import GraphModel
 from typing import Union
 
 
