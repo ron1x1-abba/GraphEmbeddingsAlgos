@@ -10,9 +10,9 @@ CORRUPT_SUBJECT = 0
 
 class TripletDataset(Dataset):
     def __init__(self,
-                 subjects: Union[List, np.array, torch.Tensor],
-                 predicates: Union[List, np.array, torch.Tensor],
-                 objects: Union[List, np.array, torch.Tensor]
+                 subjects: Union[List, np.ndarray, torch.Tensor],
+                 predicates: Union[List, np.ndarray, torch.Tensor],
+                 objects: Union[List, np.ndarray, torch.Tensor]
                  ):
         """
         :param subjects: indexes of subjects
@@ -25,30 +25,30 @@ class TripletDataset(Dataset):
 
         if isinstance(subjects, list):
             subjects = torch.Tensor(subjects)
-        elif isinstance(subjects, np.array):
+        elif isinstance(subjects, np.ndarray):
             subjects = torch.from_numpy(subjects)
         elif isinstance(subjects, torch.Tensor):
             pass
         else:
-            raise TypeError("Subjects must be on of [list, np.array, torch.Tensor]")
+            raise TypeError("Subjects must be on of [list, np.ndarray, torch.Tensor]")
 
         if isinstance(objects, list):
             objects = torch.Tensor(objects)
-        elif isinstance(objects, np.array):
+        elif isinstance(objects, np.ndarray):
             objects = torch.from_numpy(objects)
         elif isinstance(objects, torch.Tensor):
             pass
         else:
-            raise TypeError("Subjects must be on of [list, np.array, torch.Tensor]")
+            raise TypeError("Subjects must be on of [list, np.ndarray, torch.Tensor]")
 
         if isinstance(predicates, list):
             predicates = torch.Tensor(predicates)
-        elif isinstance(predicates, np.array):
+        elif isinstance(predicates, np.ndarray):
             predicates = torch.from_numpy(predicates)
         elif isinstance(predicates, torch.Tensor):
             pass
         else:
-            raise TypeError("Subjects must be on of [list, np.array, torch.Tensor]")
+            raise TypeError("Subjects must be on of [list, np.ndarray, torch.Tensor]")
 
         self.data = torch.cat([subjects, predicates, objects], dim=1)
 
@@ -83,14 +83,14 @@ def generate_corruption_fit(
         raise ValueError(f"Invalid argument value {corrupt} passed for corruption type!")
 
     if entities_list is not None:
-        if isinstance(entities_list, np.array):
+        if isinstance(entities_list, np.ndarray):
             entities_list = torch.from_numpy(entities_list)
         elif isinstance(entities_list, list):
             entities_list = torch.Tensor(entities_list)
         elif isinstance(entities_list, torch.Tensor):
             pass
         else:
-            raise TypeError("Entities list if implemented for [list, np.array, torch.Tensor]. Please, use them!")
+            raise TypeError("Entities list if implemented for [list, np.ndarray, torch.Tensor]. Please, use them!")
 
     dataset = torch.tile(triplets.view(-1,), (eta,)).view(-1, 3)
 

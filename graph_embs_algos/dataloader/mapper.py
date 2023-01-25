@@ -59,7 +59,7 @@ class DataMapper:
         """
         Transformes triplets to given/loaded indexes in init.
         :param triplets: List of triplet items of (subject, predicate, object).
-        :param return_tensors: Type of tensor to return : 'np' for np.array, 'pt' for torch.Tensor,
+        :param return_tensors: Type of tensor to return : 'np' for np.ndarray, 'pt' for torch.Tensor,
             'list' for List[List[int]].
         :return: matrix of transformed triplets indexes.
         """
