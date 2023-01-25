@@ -157,5 +157,5 @@ def generate_corruption_eval(
     else:
         stacked = torch.stack([rep_ent, rep_rel, rep_obj], dim=1)  # shape (n, 3, len(ent_for_corr))
 
-    return triplets, stacked.transpose(2, 1).view(-1, 3)
+    return stacked.transpose(2, 1).reshape(-1, 3)
 

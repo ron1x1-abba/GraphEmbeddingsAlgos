@@ -32,11 +32,11 @@ def compare(score_corr: torch.Tensor, score_pos: torch.Tensor, comparisson_type:
     score_corr = (score_corr * SCORE_COMPARISSON_PRECISION).int()
 
     if comparisson_type == 'best':
-        return (score_corr > score_pos).int().sum()
+        return (score_corr > score_pos).int().sum().view(-1,)
     elif comparisson_type == 'middle':
-        return (score_corr > score_pos).int().sum() + ((score_corr == score_pos).int().sum() / 2).ceil().int()
+        return ((score_corr > score_pos).int().sum() + ((score_corr == score_pos).int().sum() / 2).ceil().int()).view(-1,)
     else:
-        return (score_corr >= score_pos).int().sum()
+        return (score_corr >= score_pos).int().sum().view(-1,)
 
 
 def val_collator_upd(triplets, collate_fn=None, eta_val=3, **kwargs):
@@ -55,8 +55,13 @@ def val_collator_upd(triplets, collate_fn=None, eta_val=3, **kwargs):
     collations = []
     for triplet in triplets:
         kwargs['entities_for_corrupt'] = entities[torch.randperm(entities.shape[0])[:eta_val]]
-        collations.append((triplet, collate_fn(triplets, **kwargs)))
+        collations.append((triplet.view(1, 3), collate_fn(triplets, **kwargs)))
     return collations
+
+
+def train_collate_upd(triplets, collate_fn=None, **kwargs):
+    triplets = torch.cat([x.view(1, -1) for x in triplets], dim=0)
+    return collate_fn(triplets, **kwargs)
 
 
 class LitModel(pl.LightningModule):
@@ -102,7 +107,7 @@ class LitModel(pl.LightningModule):
                 score_pos = self.model(pos_trip[:, 0], pos_trip[:, 1], pos_trip[:, 2])
                 score_corr = self.model(neg_trip[:, 0], neg_trip[:, 1], neg_trip[:, 2])
 
-            if self.hpatams.val_corrupt == 's+o':
+            if self.hparams.val_corrupt == 's+o':
                 obj_corr_score = score_corr[:score_corr.shape[0] // 2]
                 subj_corr_score = score_corr[score_corr.shape[0] // 2:]
                 rank = torch.cat([
@@ -110,7 +115,7 @@ class LitModel(pl.LightningModule):
                     compare(obj_corr_score, score_pos, 'best') + 1
                 ], dim=0)
             else:
-                rank = compare(score_corr, score_pos, 'best')  + 1
+                rank = compare(score_corr, score_pos, 'best') + 1
             ranks.append(rank)
 
         return {'rank' : torch.cat(ranks, dim=0)}
@@ -166,8 +171,8 @@ class LitModel(pl.LightningModule):
         self.total_steps = math.ceil(len(self.train_dataset) * self.hparams.epochs /
                                      (self.train_bs * self.hparams.accumulate_grad_batches * self.hparams.gpus))
 
-        self.train_collate = partial(generate_corruption_fit, eta=self.hparams.eta, entities_list=None, ent_size=0,
-                                     corrupt=self.hparams.train_corrupt)
+        self.train_collate = partial(train_collate_upd, collate_fn=generate_corruption_fit, eta=self.hparams.eta,
+                                     entities_list=None, ent_size=0, corrupt=self.hparams.train_corrupt)
         self.val_collate = partial(val_collator_upd, collate_fn=generate_corruption_eval,
                                    corrupt=self.hparams.val_corrupt, eta_val=self.hparams.eta_val)
 
