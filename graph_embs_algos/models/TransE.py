@@ -22,7 +22,8 @@ class TransE(GraphModel):
         super(TransE, self).__init__(
             n_relations=n_relations,
             n_entities=n_entities,
-            emb_dim=emb_dim
+            emb_dim=emb_dim,
+            nonlinear=nonlinear
         )
         self.norm_type = norm_type
         if nonlinear is None:

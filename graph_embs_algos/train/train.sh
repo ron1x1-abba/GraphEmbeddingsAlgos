@@ -1,8 +1,8 @@
 #!/usr/bin/bash
 
-DATA_DIR="../../datasets"
-SAVE_DIR="../../models"
-LOG_DIR="../../mylogs"
+DATA_DIR="../../../datasets"
+SAVE_DIR="../../../models"
+LOG_DIR="../../../mylogs"
 
 TRAIN_DATASET="--train_dataset=${DATA_DIR}/test_graph_50k.pkl"
 

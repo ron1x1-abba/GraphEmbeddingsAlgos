@@ -6,7 +6,7 @@ class GraphModel(torch.nn.Module):
                  n_relations: int,
                  n_entities: int,
                  emb_dim: int,
-                 nonlinear: str,
+                 nonlinear: str = None
                  ):
         super(GraphModel, self).__init__()
         self.entity_embedding = torch.nn.Embedding(n_entities, emb_dim)
