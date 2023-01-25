@@ -246,7 +246,7 @@ if __name__ == "__main__":
 
     trainer = pl.Trainer(
         accumulate_grad_batches=params.accumulate_grad_batches,
-        strategy=params.strategy,
+        strategy=params.strategy if params.strategy != 'None' else None,
         log_every_n_steps=100,
         val_check_interval=1.0,
         accelerator='gpu',
