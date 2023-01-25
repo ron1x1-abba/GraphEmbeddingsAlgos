@@ -34,8 +34,8 @@ class DataMapper:
         for i, rel in enumerate(unique_rels):
             self.rel2idx[rel] = i
 
-        self.idx2ent = {v : k for k, v in self.ent2idx.items()}
-        self.idx2rel = {v : k for k, v in self.rel2idx.items()}
+        self.idx2ent = {v: k for k, v in self.ent2idx.items()}
+        self.idx2rel = {v: k for k, v in self.rel2idx.items()}
 
     def get_entity(self, idx):
         return self.idx2ent[idx]
@@ -100,10 +100,10 @@ class DataMapper:
 
         with open(ent_path, 'rb') as f:
             self.ent2idx = pickle.load(f)
-            self.idx2ent = {k : v for v, k in self.ent2idx.items()}
+            self.idx2ent = {k: v for v, k in self.ent2idx.items()}
 
         with open(rel_path, 'rb') as f:
             self.rel2idx = pickle.load(f)
-            self.idx2rel = {k : v for v, k in self.rel2idx.items()}
+            self.idx2rel = {k: v for v, k in self.rel2idx.items()}
 
         return self
