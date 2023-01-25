@@ -67,9 +67,9 @@ class DataMapper:
             raise TypeError("Unexpected type of tensor to return! Must be one of ['pt', 'np', 'list'] !")
         data = [(self.ent2idx[s], self.rel2idx[p], self.ent2idx[o]) for s, p, o in triplets]
         if return_tensors == 'pt':
-            data = torch.Tensor(data)
+            data = torch.Tensor(data).int()
         elif return_tensors == 'np':
-            data = np.array(data)
+            data = np.array(data, dtype=np.int32)
         return data
 
     def save(self, path):
