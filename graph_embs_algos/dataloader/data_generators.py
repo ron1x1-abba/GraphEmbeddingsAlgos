@@ -133,7 +133,7 @@ def generate_corruption_eval(
     :param corrupt: Which part of triplet to corrupt. Can be 's' for subject, 'o' for object, 's+o' for both.
     :return: torch.Tensor os shape (n, 3) of corrupted triplets. Where n -- len entities for corrupt.
     """
-    if corrupt not in ['s', 'o', 's+o']:
+    if corrupt not in ['s', 'o', 's+o', 's,o']:
         raise ValueError(f"Invalid argument value {corrupt} passed for corruption type!")
 
     if corrupt == 's,o':
