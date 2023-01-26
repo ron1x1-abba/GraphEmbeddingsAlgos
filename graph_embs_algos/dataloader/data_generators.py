@@ -155,19 +155,22 @@ def generate_corruption_eval(
 
     rep_ent = entities_for_corrupt.repeat(triplets.shape[0], 1)
 
+    corr_objs = torch.stack([rep_subj, rep_rel, rep_ent], dim=1)
+    corr_subjs = torch.stack([rep_ent, rep_rel, rep_obj], dim=1)
+
     if use_filter:
-        ind_subj = search_fn(rep_subj, rep_rel, rep_ent, pos_filter)
-        ind_obj = search_fn(rep_ent, rep_rel, rep_obj, pos_filter)
+        ind_subj = search_fn(corr_objs, pos_filter)
+        ind_obj = search_fn(corr_subjs, pos_filter)
 
     if corrupt == 's+o':
         stacked = torch.cat([
-            torch.stack([rep_subj, rep_rel, rep_ent], dim=1),
-            torch.stack([rep_ent, rep_rel, rep_obj], dim=1)
+            corr_objs,
+            corr_subjs
         ], dim=0)
     elif corrupt == 'o':
-        stacked = torch.stack([rep_subj, rep_rel, rep_ent])
+        stacked = corr_objs
     else:
-        stacked = torch.stack([rep_ent, rep_rel, rep_obj], dim=1)  # shape (n, 3, len(ent_for_corr))
+        stacked = corr_subjs  # shape (n, 3, len(ent_for_corr))
 
     if not use_filter:
         return stacked.transpose(2, 1).reshape(-1, 3)
@@ -175,15 +178,13 @@ def generate_corruption_eval(
         return stacked.transpose(2, 1).reshape(-1, 3), ind_subj, ind_obj
 
 
-def search_fn(subj, rel, obj, pos_filter):
+def search_fn(trips, pos_filter):
     """
     Search for incoming or triplet into positives.
-    :param subj: subjects in corrupted triplet.
-    :param rel: objects in corrupted triplet.
-    :param obj: relations in corrupted triplet.
+    :param trips: Corrupted triplets.
     :param pos_filter: Dict of all positive triplets {(s_idx, p_idx, o_idx) : True.
     :return: torch.Tensor of FN indices.
     """
-    indicies = [i for i, (s, p, o) in enumerate(zip(subj, rel, obj)) if (s.item(), p.item(), o.item()) in pos_filter]
-    return torch.Tensor(indicies).to(subj.device).int()
+    indicies = [i for i, (s, p, o) in enumerate(trips) if (s.item(), p.item(), o.item()) in pos_filter]
+    return torch.Tensor(indicies).to(trips.device).int()
 

@@ -57,12 +57,12 @@ def val_collator_upd(triplets, collate_fn=None, eta_val=3, use_filter=False, pos
     kwargs['use_filter'] = use_filter
     kwargs['pos_filter'] = pos_filter
     collations = []
+    kwargs['entities_for_corrupt'] = entities[torch.randperm(entities.shape[0])]
     for triplet in triplets:
-        kwargs['entities_for_corrupt'] = entities[torch.randperm(entities.shape[0])[:eta_val]]
         if not use_filter:
-            collations.append((triplet.view(1, 3), collate_fn(triplet, **kwargs)))
+            collations.append((triplet.view(1, 3), collate_fn(triplet.view(1, 3), **kwargs)))
         else:
-            corrs, ind_subj, ind_obj = collate_fn(triplet, **kwargs)
+            corrs, ind_subj, ind_obj = collate_fn(triplet.view(1, 3), **kwargs)
             collations.append((triplet.view(1, 3), corrs, ind_subj, ind_obj, kwargs['entities_for_corrupt']))
     return collations
 
