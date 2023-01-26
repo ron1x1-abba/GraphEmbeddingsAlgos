@@ -124,15 +124,21 @@ def generate_corruption_fit(
 def generate_corruption_eval(
         triplets: torch.Tensor,
         entities_for_corrupt: torch.Tensor,
-        corrupt: str = 's,o'
+        corrupt: str = 's,o',
+        use_filter: bool = False,
+        pos_filter: dict = None
     ) -> torch.Tensor:
     """
     Generate corruptions for evaluation.
     :param triplets: torch.Tensor of shape (1, 3) of positive triplets. Will be used to generate negatives.
     :param entities_for_corrupt: Entities IDs which will be used to generate corruptions.
     :param corrupt: Which part of triplet to corrupt. Can be 's' for subject, 'o' for object, 's+o' for both.
+    :param use_filter: Whether to filter FN in corrupted triplets.
+    :param pos_filter: Dict of all positive triplets {(s_idx, p_idx, o_idx) : True}
     :return: torch.Tensor os shape (n, 3) of corrupted triplets. Where n -- len entities for corrupt.
     """
+    if use_filter and pos_filter is None:
+        raise RuntimeError("Filter must be set when parameter use_filter set True.")
     if corrupt not in ['s', 'o', 's+o', 's,o']:
         raise ValueError(f"Invalid argument value {corrupt} passed for corruption type!")
 
@@ -149,15 +155,35 @@ def generate_corruption_eval(
 
     rep_ent = entities_for_corrupt.repeat(triplets.shape[0], 1)
 
+    if use_filter:
+        ind_subj = search_fn(rep_subj, rep_rel, rep_ent, pos_filter)
+        ind_obj = search_fn(rep_ent, rep_rel, rep_obj, pos_filter)
+
     if corrupt == 's+o':
         stacked = torch.cat([
-            torch.stack([rep_subj, rep_rel, rep_obj], dim=1),
+            torch.stack([rep_subj, rep_rel, rep_ent], dim=1),
             torch.stack([rep_ent, rep_rel, rep_obj], dim=1)
         ], dim=0)
     elif corrupt == 'o':
-        stacked = torch.stack([rep_subj, rep_rel, rep_obj])
+        stacked = torch.stack([rep_subj, rep_rel, rep_ent])
     else:
         stacked = torch.stack([rep_ent, rep_rel, rep_obj], dim=1)  # shape (n, 3, len(ent_for_corr))
 
-    return stacked.transpose(2, 1).reshape(-1, 3)
+    if not use_filter:
+        return stacked.transpose(2, 1).reshape(-1, 3)
+    else:
+        return stacked.transpose(2, 1).reshape(-1, 3), ind_subj, ind_obj
+
+
+def search_fn(subj, rel, obj, pos_filter):
+    """
+    Search for incoming or triplet into positives.
+    :param subj: subjects in corrupted triplet.
+    :param rel: objects in corrupted triplet.
+    :param obj: relations in corrupted triplet.
+    :param pos_filter: Dict of all positive triplets {(s_idx, p_idx, o_idx) : True.
+    :return: torch.Tensor of FN indices.
+    """
+    indicies = [i for i, (s, p, o) in enumerate(zip(subj, rel, obj)) if (s.item(), p.item(), o.item()) in pos_filter]
+    return torch.Tensor(indicies).to(subj.device).int()
 

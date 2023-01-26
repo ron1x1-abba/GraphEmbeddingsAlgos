@@ -13,6 +13,7 @@ ETA_VAL="--eta_val=5"
 TRAIN_CORRUPT="--train_corrupt=s,o"
 VAL_CORRUPT="--val_corrupt=s,o"
 COMPARISSON_TYPE="--comparisson_type=worst"
+USE_FILTER="--use_filter"
 
 VAL_RATIO="--val_ratio=0.01"
 TRAIN_BS="--train_bs=128"

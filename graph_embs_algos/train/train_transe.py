@@ -39,23 +39,31 @@ def compare(score_corr: torch.Tensor, score_pos: torch.Tensor, comparisson_type:
         return (score_corr >= score_pos).int().sum().view(-1,)
 
 
-def val_collator_upd(triplets, collate_fn=None, eta_val=3, **kwargs):
+def val_collator_upd(triplets, collate_fn=None, eta_val=3, use_filter=False, pos_filter=None, **kwargs):
     """
     Generates entities_for_corrupt.
 
     :param triplets: torch.Tensor of shape (n, 3) of triplets.
     :param collate_fn: generate corruptions collate fn.
     :param eta_val: Number of corruptions per positive.
+    :param use_filter: Whether to filter FN in corruption generation.
+    :param pos_filter: Dict of all positive triplets {(s_idx, p_idx, o_idx) : True}.
     :param kwargs: key-word args given to collate_fn.
     :return: List of (positive, corruptions)
     """
 
     triplets = torch.cat([x.view(1, -1) for x in triplets], dim=0)
     entities = torch.unique(torch.cat([triplets[:, 0], triplets[:, 2]], dim=0))
+    kwargs['use_filter'] = use_filter
+    kwargs['pos_filter'] = pos_filter
     collations = []
     for triplet in triplets:
         kwargs['entities_for_corrupt'] = entities[torch.randperm(entities.shape[0])[:eta_val]]
-        collations.append((triplet.view(1, 3), collate_fn(triplets, **kwargs)))
+        if not use_filter:
+            collations.append((triplet.view(1, 3), collate_fn(triplet, **kwargs)))
+        else:
+            corrs, ind_subj, ind_obj = collate_fn(triplet, **kwargs)
+            collations.append((triplet.view(1, 3), corrs, ind_subj, ind_obj, kwargs['entities_for_corrupt']))
     return collations
 
 
@@ -102,20 +110,50 @@ class LitModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         ranks = []
-        for pos_trip, neg_trip in batch:
+        for trips in batch:
+            if self.hparams.use_filter:
+                pos_trip, neg_trip, indices_subj, indices_obj, corr_ents = trips
+            else:
+                pos_trip, neg_trip = trips
+
             with torch.set_grad_enabled(False):
                 score_pos = self.model(pos_trip[:, 0], pos_trip[:, 1], pos_trip[:, 2])
                 score_corr = self.model(neg_trip[:, 0], neg_trip[:, 1], neg_trip[:, 2])
 
+            pos_among_obj_corr_ranked_higher = torch.Tensor([0]).int().to(score_pos.device)
+            pos_among_subj_corr_ranked_higher = torch.Tensor([0]).int().to(score_pos.device)
+
             if self.hparams.val_corrupt == 's,o':
                 obj_corr_score = score_corr[:score_corr.shape[0] // 2]
                 subj_corr_score = score_corr[score_corr.shape[0] // 2:]
+
+            if self.hparams.use_filter:
+
+                if self.hparams.val_corrupt == 's,o':
+                    score_pos_obj = torch.gather(obj_corr_score, 0, indices_obj)
+                    score_pos_subj = torch.gather(subj_corr_score, 0, indices_subj)
+                else:
+                    score_pos_obj = torch.gather(score_corr, 0, indices_obj)
+                    if self.hparams.val_corrupt == 's+o':
+                        score_pos_subj = torch.gather(score_corr, 0, indices_subj + len(corr_ents))
+                    else:
+                        score_pos_subj = torch.gather(score_corr, 0, indices_subj)
+
+                if 'o' in self.hparams.val_corrupt:
+                    pos_among_obj_corr_ranked_higher = compare(score_pos_obj, score_pos, self.hparams.comparisson_type)
+                if 's' in self.hparams.val_corrupt:
+                    pos_among_subj_corr_ranked_higher = compare(score_pos_subj, score_pos, self.hparams.comparisson_type)
+
+            if self.hparams.val_corrupt == 's,o':
                 rank = torch.cat([
-                    compare(subj_corr_score, score_pos, self.hparams.comparisson_type).view(-1,1) + 1,
-                    compare(obj_corr_score, score_pos, self.hparams.comparisson_type).view(-1,1) + 1
+                    compare(subj_corr_score, score_pos, self.hparams.comparisson_type).view(-1,1) + 1 -
+                    pos_among_subj_corr_ranked_higher,
+                    compare(obj_corr_score, score_pos, self.hparams.comparisson_type).view(-1,1) + 1 -
+                    pos_among_obj_corr_ranked_higher
                 ], dim=1)
             else:
-                rank = compare(score_corr, score_pos, self.hparams.comparisson_type) + 1
+                rank = compare(score_corr, score_pos, self.hparams.comparisson_type) + 1 - \
+                       pos_among_subj_corr_ranked_higher - pos_among_obj_corr_ranked_higher
             ranks.append(rank)
 
         return {'rank' : torch.cat(ranks, dim=0)}
@@ -161,6 +199,7 @@ class LitModel(pl.LightningModule):
         self.model = TransE(n_relations=len(self.mapper.rel2idx), n_entities=len(self.mapper.ent2idx), emb_dim=150,
                             nonlinear=None, norm_type=2)
         self.train_dataset = self.mapper.transform(triplets, return_tensors='pt')
+        pos_filter = {(s.item(), p.item(), o.item()): True for s, p, o in self.train_dataset}
         self.train_dataset, self.val_dataset = train_test_split(self.train_dataset, test_size=self.hparams.val_ratio)
 
         self.train_dataset = TripletDataset(self.train_dataset[:, 0], self.train_dataset[:, 1],
@@ -174,7 +213,8 @@ class LitModel(pl.LightningModule):
         self.train_collate = partial(train_collate_upd, collate_fn=generate_corruption_fit, eta=self.hparams.eta,
                                      entities_list=None, ent_size=0, corrupt=self.hparams.train_corrupt)
         self.val_collate = partial(val_collator_upd, collate_fn=generate_corruption_eval,
-                                   corrupt=self.hparams.val_corrupt, eta_val=self.hparams.eta_val)
+                                   corrupt=self.hparams.val_corrupt, eta_val=self.hparams.eta_val,
+                                   use_filter=self.hparams.use_filter, pos_filter=pos_filter)
 
     def train_dataloader(self):
         loader = torch.utils.data.DataLoader(self.train_dataset, batch_size=self.train_bs, shuffle=True,
@@ -219,10 +259,12 @@ def configure_options():
                                                                          "training,  can be one of "
                                                                          "['s+o', 'o', 's', 's,o']")
     parser.add_argument("--val_corrupt", type=str, default='s,o', help="Which part of triplet to corrupt during "
-                                                                        "validation,  can be one of"
-                                                                        " ['s+o', 'o', 's', 's,o']")
+                                                                       "validation, can be one of"
+                                                                       " ['s+o', 'o', 's', 's,o']")
     parser.add_argument("--comparisson_type", type=str, default='best', help="How to compare model results.")
     parser.add_argument("--lr_scheduler", action="store_true", default=False, help="Whether to use LRScheduler or not.")
+    parser.add_argument("--use_filter", action="store_true", default=False, help="Whether to filter FP in "
+                                                                                 "corruption generation")
 
     args = parser.parse_args()
     return args
@@ -238,7 +280,7 @@ if __name__ == "__main__":
 
     callbacks = [
         pl.callbacks.ModelCheckpoint(
-            dirpath=params.save_path + f'mode-v_{logger.version}',
+            dirpath=params.save_path + f'model-v_{logger.version}',
             filename='{epoch}-{hits@10:.3f}',
             every_n_epochs=1,
             save_top_k=1,
