@@ -185,6 +185,6 @@ def search_fn(trips, pos_filter):
     :param pos_filter: Dict of all positive triplets {(s_idx, p_idx, o_idx) : True.
     :return: torch.Tensor of FN indices.
     """
-    indicies = [i for i, (s, p, o) in enumerate(trips) if (s.item(), p.item(), o.item()) in pos_filter]
+    indicies = [i for i, (s, p, o) in enumerate(trips) if (s.item(), p.item(), o.item()) in pos_filter and s == o]
     return torch.Tensor(indicies).to(trips.device).long()
 
