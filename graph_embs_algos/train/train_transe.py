@@ -166,7 +166,8 @@ class LitModel(pl.LightningModule):
                 for n, n_s in zip(neg_trip, score_corr):
                     print(
                         f"<{self.mapper.idx2ent[n[:, 0].item()]} , {self.mapper.idx2rel[n[:, 1].item()]} "
-                        f", {self.mapper.idx2ent[n[:, 2].item()]}> \t\t Score : {n_s.item():.4} \t\t ")
+                        f", {self.mapper.idx2ent[n[:, 2].item()]}> \t\t Score : {n_s.item():.4} \t\t "
+                        f" {'HEREEEEEE' if n_s >= score_pos  else ''}")
                 print("=" * 70)
 
         return {'rank' : torch.cat(ranks, dim=0)}

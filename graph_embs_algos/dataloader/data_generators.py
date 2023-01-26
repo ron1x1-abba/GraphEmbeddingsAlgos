@@ -159,8 +159,8 @@ def generate_corruption_eval(
     corr_subjs = torch.stack([rep_ent, rep_rel, rep_obj], dim=1)
 
     if use_filter:
-        ind_subj = search_fn(corr_objs.transpose(2, 1).reshape(-1, 3), pos_filter)
-        ind_obj = search_fn(corr_subjs.transpose(2, 1).reshape(-1, 3), pos_filter)
+        ind_subj = search_fn(corr_subjs.transpose(2, 1).reshape(-1, 3), pos_filter)
+        ind_obj = search_fn(corr_objs.transpose(2, 1).reshape(-1, 3), pos_filter)
 
     if corrupt == 's+o':
         stacked = torch.cat([
