@@ -130,6 +130,7 @@ def generate_corruption_eval(
     ) -> torch.Tensor:
     """
     Generate corruptions for evaluation.
+
     :param triplets: torch.Tensor of shape (1, 3) of positive triplets. Will be used to generate negatives.
     :param entities_for_corrupt: Entities IDs which will be used to generate corruptions.
     :param corrupt: Which part of triplet to corrupt. Can be 's' for subject, 'o' for object, 's+o' for both.
@@ -146,7 +147,7 @@ def generate_corruption_eval(
         corrupt = 's+o'
 
     if corrupt in ['s+o', 'o']:  # object is corrupted, leave subjects as it is
-        rep_subj = triplets[:, 0].view(-1, 1).repeat((1, entities_for_corrupt.shape[0])) # shape (n, len(ent_for_corr))
+        rep_subj = triplets[:, 0].view(-1, 1).repeat((1, entities_for_corrupt.shape[0]))  # shape (n, len(ent_for_corr))
 
     if corrupt in ['s+o', 's']:  # subject is corrupted, leave objects as it is
         rep_obj = triplets[:, 2].view(-1, 1).repeat((1, entities_for_corrupt.shape[0]))
@@ -180,7 +181,8 @@ def generate_corruption_eval(
 
 def search_fn(trips, pos_filter):
     """
-    Search for incoming or triplet into positives.
+    Search for entering of triplet into positives.
+
     :param trips: Corrupted triplets.
     :param pos_filter: Dict of all positive triplets {(s_idx, p_idx, o_idx) : True.
     :return: torch.Tensor of FN indices.

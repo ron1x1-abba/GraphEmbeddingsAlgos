@@ -7,6 +7,7 @@ import torch
 def train_test_split(X, test_size: Union[int, float] = 0.2, allow_duplicate: bool = False):
     """
     Generates test set which contains only those items that occured in train.
+
     :param X: torch.Tensor of shape (n, 3). The dataset to split.
     :param test_size: ratio of total triplets to be test.
     :param allow_duplicate: If test set can have duplicates.
@@ -25,7 +26,7 @@ def train_test_split(X, test_size: Union[int, float] = 0.2, allow_duplicate: boo
     rels, rels_cnt = np.unique(X_test_cands[:, 1], return_counts=True)
     dict_ents = dict(zip(ents, ents_cnt))
     dict_rels = dict(zip(rels, rels_cnt))
-    idx_train, idx_test = [] , []
+    idx_train, idx_test = [], []
 
     all_idx_perm = np.random.permutation(X_test_cands.shape[0])
     for i, idx in enumerate(all_idx_perm):

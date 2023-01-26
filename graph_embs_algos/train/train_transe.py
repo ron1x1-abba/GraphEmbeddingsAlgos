@@ -46,11 +46,12 @@ def val_collator_upd(triplets, collate_fn=None, eta_val=3, use_filter=False, pos
 
     :param triplets: torch.Tensor of shape (n, 3) of triplets.
     :param collate_fn: generate corruptions collate fn.
-    :param eta_val: Number of corruptions per positive.
+    :param eta_val: Number of corruptions per positive. 0 for all entities from batch.
     :param use_filter: Whether to filter FN in corruption generation.
     :param pos_filter: Dict of all positive triplets {(s_idx, p_idx, o_idx) : True}.
     :param kwargs: key-word args given to collate_fn.
-    :return: List of (positive, corruptions)
+    :return: List of (positive, corruptions) or (positive, corruptions, ind_subj, ind_obj, corr_ents)
+     in case of use_filter=True
     """
 
     triplets = torch.cat([x.view(1, -1) for x in triplets], dim=0)
@@ -58,8 +59,11 @@ def val_collator_upd(triplets, collate_fn=None, eta_val=3, use_filter=False, pos
     kwargs['use_filter'] = use_filter
     kwargs['pos_filter'] = pos_filter
     collations = []
-    kwargs['entities_for_corrupt'] = entities[torch.randperm(entities.shape[0])]
+    if eta_val == 0:
+        kwargs['entities_for_corrupt'] = entities[torch.randperm(entities.shape[0])]
     for triplet in triplets:
+        if eta_val != 0:
+            kwargs['entities_for_corrupt'] = entities[torch.randperm(entities.shape[0])[:eta_val]]
         if not use_filter:
             collations.append((triplet.view(1, 3), collate_fn(triplet.view(1, 3), **kwargs)))
         else:
@@ -167,7 +171,7 @@ class LitModel(pl.LightningModule):
                     print(
                         f"<{self.mapper.idx2ent[n[0].item()]} , {self.mapper.idx2rel[n[1].item()]} "
                         f", {self.mapper.idx2ent[n[2].item()]}> \t\t Score : {n_s.item():.4} \t\t "
-                        f" {'HEREEEEEE' if n_s >= score_pos  else ''}")
+                        f" {'FP' if n_s >= score_pos  else ''}")
                 print("=" * 70)
 
         return {'rank' : torch.cat(ranks, dim=0)}
@@ -246,7 +250,7 @@ class LitModel(pl.LightningModule):
 
 
 def configure_options():
-    parser = argparse.ArgumentParser(description="Process arguements for training NN's.")
+    parser = argparse.ArgumentParser(description="Process arguments for training NN's.")
 
     parser.add_argument("--train_dataset", type=str, default="./train/data.pck", help="Path to train dataset.")
     parser.add_argument("--val_dataset", type=str, default="./val/data.pck", help="Path to val dataset.")
@@ -267,7 +271,8 @@ def configure_options():
     parser.add_argument("--logdir", type=str, default='./lightning_logs', help="Path to save training logs")
     parser.add_argument("--save_path", type=str, default="./models/", help="Path where to save checkpoints")
     parser.add_argument("--eta", type=int, default=1, help="Number of negative per 1 triplet in train.")
-    parser.add_argument("--eta_val", type=int, default=3, help="Number of negative per 1 triplet in evaluation.")
+    parser.add_argument("--eta_val", type=int, default=3, help="Number of negative per 1 triplet in evaluation."
+                                                               " 0 to use all entities from batch.")
     parser.add_argument("--val_ratio", type=float, default=3, help="Ratio of val split of train.")
     parser.add_argument("--train_corrupt", type=str, default='s,o', help="Which part of triplet to corrupt during "
                                                                          "training,  can be one of "
