@@ -14,6 +14,7 @@ TRAIN_CORRUPT="--train_corrupt=s,o"
 VAL_CORRUPT="--val_corrupt=s,o"
 COMPARISSON_TYPE="--comparisson_type=worst"
 USE_FILTER="--use_filter"
+VERBOSE="--verbose"
 
 VAL_RATIO="--val_ratio=0.01"
 TRAIN_BS="--train_bs=128"
@@ -29,4 +30,4 @@ GPUS="--gpus=1"
 
 python train_transe.py ${TRAIN_BS} ${VAL_BS} ${SAVE_PATH} ${EPOCHS} ${LOGDIR} ${GPUS} ${LR} \
     ${PCT_START} ${ETA} ${ETA_VAL} ${TRAIN_CORRUPT} ${VAL_CORRUPT} ${TRAIN_DATASET} ${COMPARISSON_TYPE} ${VAL_RATIO} \
-    ${STRATEGY}
+    ${STRATEGY} ${VERBOSE}

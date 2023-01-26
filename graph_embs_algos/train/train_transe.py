@@ -159,14 +159,14 @@ class LitModel(pl.LightningModule):
 
             if self.hparams.verbose and random.random() <= 0.05:
                 print("Positives :")
-                print(f"<{self.mapper.ent2idx[pos_trip[:, 0].item()]} , {self.mapper.rel2idx[pos_trip[:, 1].item()]} "
-                      f", {self.mapper.ent2idx[pos_trip[:, 2].item()]}> \t\t Score : {score_pos.item():.4} \t\t "
+                print(f"<{self.mapper.idx2ent[pos_trip[:, 0].item()]} , {self.mapper.idx2rel[pos_trip[:, 1].item()]} "
+                      f", {self.mapper.idx2ent[pos_trip[:, 2].item()]}> \t\t Score : {score_pos.item():.4} \t\t "
                       f" Rank : {rank}")
                 print("Negatives :")
                 for n, n_s in zip(neg_trip, score_corr):
                     print(
-                        f"<{self.mapper.ent2idx[n[:, 0].item()]} , {self.mapper.rel2idx[n[:, 1].item()]} "
-                        f", {self.mapper.ent2idx[n[:, 2].item()]}> \t\t Score : {n_s.item():.4} \t\t ")
+                        f"<{self.mapper.idx2ent[n[:, 0].item()]} , {self.mapper.idx2rel[n[:, 1].item()]} "
+                        f", {self.mapper.idx2ent[n[:, 2].item()]}> \t\t Score : {n_s.item():.4} \t\t ")
                 print("=" * 70)
 
         return {'rank' : torch.cat(ranks, dim=0)}
