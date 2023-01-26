@@ -159,8 +159,8 @@ def generate_corruption_eval(
     corr_subjs = torch.stack([rep_ent, rep_rel, rep_obj], dim=1)
 
     if use_filter:
-        ind_subj = search_fn(corr_objs, pos_filter)
-        ind_obj = search_fn(corr_subjs, pos_filter)
+        ind_subj = search_fn(corr_objs.transpose(2, 1).reshape(-1, 3), pos_filter)
+        ind_obj = search_fn(corr_subjs.transpose(2, 1).reshape(-1, 3), pos_filter)
 
     if corrupt == 's+o':
         stacked = torch.cat([
@@ -186,5 +186,5 @@ def search_fn(trips, pos_filter):
     :return: torch.Tensor of FN indices.
     """
     indicies = [i for i, (s, p, o) in enumerate(trips) if (s.item(), p.item(), o.item()) in pos_filter]
-    return torch.Tensor(indicies).to(trips.device).int()
+    return torch.Tensor(indicies).to(trips.device).long()
 
