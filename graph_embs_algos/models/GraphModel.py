@@ -11,7 +11,7 @@ class GraphModel(torch.nn.Module):
         super(GraphModel, self).__init__()
         self.entity_embedding = torch.nn.Embedding(n_entities, emb_dim)
         self.relation_embedding = torch.nn.Embedding(n_relations, emb_dim)
-        self.nonlinear = torch.nn.Tanh() if nonlinear == 'tfnh' else torch.nn.Sigmoid()
+        self.nonlinear = torch.nn.Tanh() if nonlinear == 'tanh' else torch.nn.Sigmoid()
 
     def forward(self):
         raise NotImplementedError("This function should be override in any Graph Algorithm")

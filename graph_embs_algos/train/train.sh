@@ -30,4 +30,4 @@ GPUS="--gpus=1"
 
 python train_transe.py ${TRAIN_BS} ${VAL_BS} ${SAVE_PATH} ${EPOCHS} ${LOGDIR} ${GPUS} ${LR} \
     ${PCT_START} ${ETA} ${ETA_VAL} ${TRAIN_CORRUPT} ${VAL_CORRUPT} ${TRAIN_DATASET} ${COMPARISSON_TYPE} ${VAL_RATIO} \
-    ${STRATEGY} ${VERBOSE}
+    ${STRATEGY} ${USE_FILTER}

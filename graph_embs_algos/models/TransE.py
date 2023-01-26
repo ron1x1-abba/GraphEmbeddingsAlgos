@@ -42,11 +42,9 @@ class TransE(GraphModel):
         dist = e_s + e_p - e_o
         normalized = torch.linalg.norm(dist, ord=self.norm_type, dim=1)
         if self.nonlinear is not None:
-            return
+            return -self.nonlinear(normalized)
         return -normalized
 
     def predict(self, objects, predicates, subjects):
         norm = self.forward(objects, predicates, subjects)
-        if self.nonlinear is not None:
-            return self.nonlinear(norm)
         return norm

@@ -9,7 +9,7 @@ import numpy as np
 import pytorch_lightning as pl
 from functools import partial
 
-from graph_embs_algos.models import TransE
+from graph_embs_algos.models import TransE, RotatE
 from graph_embs_algos.dataloader import TripletDataset, generate_corruption_eval, generate_corruption_fit, DataMapper
 from graph_embs_algos.loss import PairwiseLoss
 from graph_embs_algos.evaluation import hits_at_n_score, mrr_score, train_test_split
@@ -181,7 +181,7 @@ class LitModel(pl.LightningModule):
 
         self.log('epoch_loss', loss.mean())
 
-    def validation_epoch_end(self, outputs):
+    def validation_epoch_end(self, outputs):  # TODO : Add multi GPU
         ranks = torch.cat([x['rank'] for x in outputs], dim=0) # should be in outputs
 
         hits_10 = hits_at_n_score(ranks, 10)
@@ -214,7 +214,7 @@ class LitModel(pl.LightningModule):
             triplets = pickle.load(f)
 
         self.mapper = DataMapper(triplets)
-        self.model = TransE(n_relations=len(self.mapper.rel2idx), n_entities=len(self.mapper.ent2idx), emb_dim=150,
+        self.model = RotatE(n_relations=len(self.mapper.rel2idx), n_entities=len(self.mapper.ent2idx), emb_dim=150,
                             nonlinear=None, norm_type=2)
         self.train_dataset = self.mapper.transform(triplets, return_tensors='pt')
         pos_filter = {(s.item(), p.item(), o.item()): True for s, p, o in self.train_dataset}
@@ -234,14 +234,14 @@ class LitModel(pl.LightningModule):
                                    corrupt=self.hparams.val_corrupt, eta_val=self.hparams.eta_val,
                                    use_filter=self.hparams.use_filter, pos_filter=pos_filter)
 
-    def train_dataloader(self):
+    def train_dataloader(self):  # TODO : Add multi GPU
         loader = torch.utils.data.DataLoader(self.train_dataset, batch_size=self.train_bs, shuffle=True,
                                              num_workers=8, pin_memory=True, collate_fn=self.train_collate)
 
         print("Train loader is OK!")
         return loader
 
-    def val_dataloader(self):
+    def val_dataloader(self):  # TODO : Add multi GPU
         loader = torch.utils.data.DataLoader(self.val_dataset, batch_size=self.val_bs, shuffle=False,
                                              num_workers=8, pin_memory=True, collate_fn=self.val_collate)
 
