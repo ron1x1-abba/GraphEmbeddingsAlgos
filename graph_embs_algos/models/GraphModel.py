@@ -6,11 +6,13 @@ class GraphModel(torch.nn.Module):
                  n_relations: int,
                  n_entities: int,
                  emb_dim: int,
+                 double_ent_dim: bool = False,
+                 double_rel_dim: bool = False,
                  nonlinear: str = None
                  ):
         super(GraphModel, self).__init__()
-        self.entity_embedding = torch.nn.Embedding(n_entities, emb_dim)
-        self.relation_embedding = torch.nn.Embedding(n_relations, emb_dim)
+        self.entity_embedding = torch.nn.Embedding(n_entities, emb_dim if not double_ent_dim else emb_dim * 2)
+        self.relation_embedding = torch.nn.Embedding(n_relations, emb_dim if not double_rel_dim else emb_dim * 2)
         self.nonlinear = torch.nn.Tanh() if nonlinear == 'tanh' else torch.nn.Sigmoid()
 
     def forward(self):

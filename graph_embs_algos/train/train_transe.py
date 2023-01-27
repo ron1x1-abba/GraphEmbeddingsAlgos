@@ -215,7 +215,7 @@ class LitModel(pl.LightningModule):
 
         self.mapper = DataMapper(triplets)
         self.model = RotatE(n_relations=len(self.mapper.rel2idx), n_entities=len(self.mapper.ent2idx), emb_dim=150,
-                            nonlinear=None, norm_type=2)
+                            nonlinear=None, norm_type=2, gamma=12)
         self.train_dataset = self.mapper.transform(triplets, return_tensors='pt')
         pos_filter = {(s.item(), p.item(), o.item()): True for s, p, o in self.train_dataset}
         self.train_dataset, self.val_dataset = train_test_split(self.train_dataset, test_size=self.hparams.val_ratio)
